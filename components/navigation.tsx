@@ -1,19 +1,29 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useState } from "react"
-import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { usePathname } from "next/navigation";
 
 export function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/blog", label: "Blog" },
     { href: "/resources", label: "Resources" },
     { href: "/about", label: "About" },
-  ]
+  ];
+
+  const pathname = usePathname();
+
+  const isAdminPage = pathname.startsWith("/admin");
+  const isLoginPage = pathname.startsWith("/login");
+
+  if (isAdminPage || isLoginPage) {
+    return null;
+  }
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -37,7 +47,11 @@ export function Navigation() {
               </Link>
             ))}
             <Button asChild>
-              <Link href="https://preply.com/en/tutor/5553794" target="_blank" rel="noopener noreferrer">
+              <Link
+                href="https://preply.com/en/tutor/6530776"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Book a Lesson
               </Link>
             </Button>
@@ -51,8 +65,16 @@ export function Navigation() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)}>
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </Button>
           </div>
         </div>
@@ -73,14 +95,23 @@ export function Navigation() {
               ))}
               <div className="px-3 py-2">
                 <Button asChild className="w-full">
-                  <Link href="https://preply.com/en/tutor/5553794" target="_blank" rel="noopener noreferrer">
+                  <Link
+                    href="https://preply.com/en/tutor/6530776"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Book a Lesson
                   </Link>
                 </Button>
               </div>
               {process.env.NODE_ENV === "development" && (
                 <div className="px-3 py-2">
-                  <Button variant="outline" size="sm" asChild className="w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="w-full"
+                  >
                     <Link href="/test-connection">Test Database</Link>
                   </Button>
                 </div>
@@ -90,5 +121,5 @@ export function Navigation() {
         )}
       </div>
     </nav>
-  )
+  );
 }
