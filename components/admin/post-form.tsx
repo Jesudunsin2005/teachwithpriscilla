@@ -1,44 +1,45 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { useToast } from "@/hooks/use-toast"
-import { createSlug } from "@/lib/utils"
-import type { BlogPost } from "@/lib/types"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { createSlug } from "@/lib/utils";
+import type { BlogPost } from "@/lib/types";
+import { clientDb } from "@/utils/supabase/client-database";
 
 interface PostFormProps {
-  post?: BlogPost
-  isEditing?: boolean
+  post?: BlogPost;
+  isEditing?: boolean;
 }
 
 export function PostForm({ post, isEditing = false }: PostFormProps) {
-  const [title, setTitle] = useState(post?.title || "")
-  const [slug, setSlug] = useState(post?.slug || "")
-  const [excerpt, setExcerpt] = useState(post?.excerpt || "")
-  const [content, setContent] = useState(post?.content || "")
-  const [isPublished, setIsPublished] = useState(!!post?.published_at)
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
-  const router = useRouter()
+  const [title, setTitle] = useState(post?.title || "");
+  const [slug, setSlug] = useState(post?.slug || "");
+  const [excerpt, setExcerpt] = useState(post?.excerpt || "");
+  const [content, setContent] = useState(post?.content || "");
+  const [isPublished, setIsPublished] = useState(!!post?.published_at);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value
-    setTitle(newTitle)
+    const newTitle = e.target.value;
+    setTitle(newTitle);
     if (!isEditing || !slug) {
-      setSlug(createSlug(newTitle))
+      setSlug(createSlug(newTitle));
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
       const postData = {
@@ -46,49 +47,51 @@ export function PostForm({ post, isEditing = false }: PostFormProps) {
         slug,
         excerpt,
         content,
-        published_at: isPublished ? new Date().toISOString() : null,
+        published_at: isPublished ? new Date().toISOString() : undefined,
+      };
+
+      let result;
+      if (isEditing && post?.id) {
+        result = await clientDb.posts.update(post.id, postData);
+      } else {
+        result = await clientDb.posts.create(postData);
       }
 
-      const url = isEditing ? `/api/admin/posts/${post?.id}` : "/api/admin/posts"
-      const method = isEditing ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to save post")
+      if (result.error) {
+        throw new Error(result.error.message);
       }
 
       toast({
         title: isEditing ? "Post updated" : "Post created",
         description: `Your blog post has been ${isEditing ? "updated" : "created"} successfully.`,
-      })
+      });
 
-      router.push("/admin/posts")
+      router.push("/admin/posts");
     } catch (error) {
-      console.error("Error saving post:", error)
+      console.error("Error saving post:", error);
       toast({
         title: "Save failed",
-        description: error instanceof Error ? error.message : "There was a problem saving your post.",
+        description:
+          error instanceof Error ? error.message : "There was a problem saving your post.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4">
         <div>
           <Label htmlFor="title">Title</Label>
-          <Input id="title" value={title} onChange={handleTitleChange} placeholder="Enter post title" required />
+          <Input
+            id="title"
+            value={title}
+            onChange={handleTitleChange}
+            placeholder="Enter post title"
+            required
+          />
         </div>
 
         <div>
@@ -100,7 +103,9 @@ export function PostForm({ post, isEditing = false }: PostFormProps) {
             placeholder="post-url-slug"
             required
           />
-          <p className="text-sm text-gray-600 mt-1">This will be used in the URL: /blog/{slug}</p>
+          <p className="text-sm text-gray-600 mt-1">
+            This will be used in the URL: /blog/{slug}
+          </p>
         </div>
 
         <div>
@@ -124,11 +129,17 @@ export function PostForm({ post, isEditing = false }: PostFormProps) {
             rows={15}
             required
           />
-          <p className="text-sm text-gray-600 mt-1">You can use basic HTML tags for formatting.</p>
+          <p className="text-sm text-gray-600 mt-1">
+            You can use basic HTML tags for formatting.
+          </p>
         </div>
 
         <div className="flex items-center space-x-2">
-          <Switch id="published" checked={isPublished} onCheckedChange={setIsPublished} />
+          <Switch
+            id="published"
+            checked={isPublished}
+            onCheckedChange={setIsPublished}
+          />
           <Label htmlFor="published">Publish immediately</Label>
         </div>
       </div>
@@ -137,10 +148,14 @@ export function PostForm({ post, isEditing = false }: PostFormProps) {
         <Button type="submit" disabled={isLoading}>
           {isLoading ? "Saving..." : isEditing ? "Update Post" : "Create Post"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => router.push("/admin/posts")}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push("/admin/posts")}
+        >
           Cancel
         </Button>
       </div>
     </form>
-  )
+  );
 }

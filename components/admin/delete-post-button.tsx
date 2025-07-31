@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,49 +13,48 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Trash2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { clientDb } from "@/utils/supabase/client-database";
 
 interface DeletePostButtonProps {
-  postId: string
-  postTitle: string
+  postId: string;
+  postTitle: string;
 }
 
 export function DeletePostButton({ postId, postTitle }: DeletePostButtonProps) {
-  const [isDeleting, setIsDeleting] = useState(false)
-  const { toast } = useToast()
-  const router = useRouter()
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
   const handleDelete = async () => {
-    setIsDeleting(true)
+    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/admin/posts/${postId}`, {
-        method: "DELETE",
-      })
+      const { error } = await clientDb.posts.delete(postId);
 
-      if (!response.ok) {
-        throw new Error("Failed to delete post")
+      if (error) {
+        throw new Error(error.message);
       }
 
       toast({
         title: "Post deleted",
         description: "The blog post has been deleted successfully.",
-      })
+      });
 
-      router.refresh()
+      router.refresh();
     } catch (error) {
-      console.error("Error deleting post:", error)
+      console.error("Error deleting post:", error);
       toast({
         title: "Delete failed",
         description: "There was a problem deleting the post.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   return (
     <AlertDialog>
@@ -68,7 +67,8 @@ export function DeletePostButton({ postId, postTitle }: DeletePostButtonProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Post</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{postTitle}"? This action cannot be undone.
+            Are you sure you want to delete "{postTitle}"? This action cannot be
+            undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -79,5 +79,5 @@ export function DeletePostButton({ postId, postTitle }: DeletePostButtonProps) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

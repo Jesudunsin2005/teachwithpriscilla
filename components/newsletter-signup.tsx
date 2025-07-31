@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { clientDb } from "@/utils/supabase/client-database";
 
 export function NewsletterSignup() {
-  const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const { error } = await supabase.from("subscribers").insert([{ email }])
+      const { error } = await clientDb.subscribers.create(email);
 
       if (error) {
         if (error.code === "23505") {
@@ -27,28 +27,28 @@ export function NewsletterSignup() {
             title: "Already subscribed!",
             description: "This email is already on our mailing list.",
             variant: "default",
-          })
+          });
         } else {
-          throw error
+          throw error;
         }
       } else {
         toast({
           title: "Successfully subscribed!",
           description: "Thank you for joining our newsletter.",
-        })
-        setEmail("")
+        });
+        setEmail("");
       }
     } catch (error) {
-      console.error("Error subscribing:", error)
+      console.error("Error subscribing:", error);
       toast({
         title: "Subscription failed",
         description: "Please try again later.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
@@ -64,5 +64,5 @@ export function NewsletterSignup() {
         {isLoading ? "Subscribing..." : "Subscribe"}
       </Button>
     </form>
-  )
+  );
 }

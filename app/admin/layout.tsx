@@ -2,20 +2,18 @@ import type React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/serverSupaBase";
+import { serverAuth } from "@/utils/supabase/auth";
 
 async function signOut() {
   "use server";
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  await serverAuth.signOut();
 }
 
 async function getUser() {
   "use server";
-  const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await serverAuth.getUser();
   console.log(user);
   return user;
 }

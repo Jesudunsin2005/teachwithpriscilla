@@ -1,43 +1,56 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { PlusCircle, FileText, Download, Users, Settings, Eye } from "lucide-react"
-import { createServerClient } from "@/lib/supabase"
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  PlusCircle,
+  FileText,
+  Download,
+  Users,
+  Settings,
+  Eye,
+} from "lucide-react";
+import { serverDb } from "@/utils/supabase/database";
 
 async function getDashboardStats() {
-  const supabase = createServerClient()
-
   try {
     const [postsResult, resourcesResult, subscribersResult] = await Promise.all([
-      supabase.from("blog_posts").select("id", { count: "exact" }),
-      supabase.from("resources").select("id", { count: "exact" }),
-      supabase.from("subscribers").select("id", { count: "exact" }),
-    ])
+      serverDb.posts.getAll(),
+      serverDb.resources.getAll(),
+      serverDb.subscribers.getAll(),
+    ]);
 
     return {
-      posts: postsResult.count || 0,
-      resources: resourcesResult.count || 0,
-      subscribers: subscribersResult.count || 0,
-    }
+      posts: postsResult.data?.length || 0,
+      resources: resourcesResult.data?.length || 0,
+      subscribers: subscribersResult.data?.length || 0,
+    };
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error)
+    console.error("Error fetching dashboard stats:", error);
     return {
       posts: 0,
       resources: 0,
       subscribers: 0,
-    }
+    };
   }
 }
 
 export default async function AdminDashboard() {
-  const stats = await getDashboardStats()
+  const stats = await getDashboardStats();
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Manage your blog content and resources</p>
+          <p className="text-gray-600">
+            Manage your blog content and resources
+          </p>
         </div>
         <Button asChild>
           <Link href="/" target="_blank">
@@ -106,7 +119,9 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Resources Management</CardTitle>
-            <CardDescription>Upload and manage downloadable resources</CardDescription>
+            <CardDescription>
+              Upload and manage downloadable resources
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button asChild className="w-full">
@@ -124,7 +139,9 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Site Settings</CardTitle>
-            <CardDescription>Manage site content and configuration</CardDescription>
+            <CardDescription>
+              Manage site content and configuration
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button asChild className="w-full">
@@ -140,5 +157,5 @@ export default async function AdminDashboard() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

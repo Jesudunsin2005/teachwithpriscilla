@@ -8,18 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { NewsletterSignup } from "@/components/newsletter-signup";
-import { supabase } from "@/lib/supabase";
+import { serverDb } from "@/utils/supabase/database";
 import type { BlogPost } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 async function getFeaturedPost(): Promise<BlogPost | null> {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .not("published_at", "is", null)
-    .lte("published_at", new Date().toISOString())
-    .order("published_at", { ascending: false })
-    .limit(1);
+  const { data, error } = await serverDb.posts.getPublished();
 
   if (error) {
     console.error("Error fetching featured post:", error);

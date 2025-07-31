@@ -1,41 +1,33 @@
-import { notFound } from "next/navigation"
-import { PostForm } from "@/components/admin/post-form"
-import { createServerClient } from "@/lib/supabase"
-import type { BlogPost } from "@/lib/types"
+import { notFound } from "next/navigation";
+import { PostForm } from "@/components/admin/post-form";
+import type { BlogPost } from "@/lib/types";
+import { serverDb } from "@/utils/supabase/database";
 
-async function getPost(id: string): Promise<BlogPost | null> {
-  const supabase = createServerClient()
-
-  try {
-    const { data, error } = await supabase.from("blog_posts").select("*").eq("id", id).single()
-
-    if (error) {
-      console.error("Error fetching post:", error)
-      return null
-    }
-
-    return data
-  } catch (error) {
-    console.error("Error in getPost:", error)
-    return null
-  }
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const post = await getPost(id)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const { data: post, error } = await serverDb.posts.getById(id);
 
   return {
-    title: post ? `Edit: ${post.title} - Admin Dashboard` : "Post Not Found - Admin Dashboard",
-  }
+    title: post
+      ? `Edit: ${post.title} - Admin Dashboard`
+      : "Post Not Found - Admin Dashboard",
+  };
 }
 
-export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const post = await getPost(id)
+export default async function EditPostPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const { data: post, error } = await serverDb.posts.getById(id);
 
-  if (!post) {
-    notFound()
+  if (error || !post) {
+    notFound();
   }
 
   return (
@@ -49,5 +41,5 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
         <PostForm post={post} isEditing={true} />
       </div>
     </div>
-  )
+  );
 }

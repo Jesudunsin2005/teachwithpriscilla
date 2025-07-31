@@ -1,61 +1,72 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase } from "@/lib/supabase"
-import type { BlogPost } from "@/lib/types"
-import { formatDate } from "@/lib/utils"
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { serverDb } from "@/utils/supabase/database";
+import { formatDate } from "@/lib/utils";
+import type { BlogPost } from "@/lib/types";
 
 interface RelatedPostsProps {
-  currentPostId: string
-}
-
-async function getRelatedPosts(currentPostId: string): Promise<BlogPost[]> {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .not("published_at", "is", null)
-    .lte("published_at", new Date().toISOString())
-    .neq("id", currentPostId)
-    .order("published_at", { ascending: false })
-    .limit(3)
-
-  if (error) {
-    console.error("Error fetching related posts:", error)
-    return []
-  }
-
-  return data || []
+  currentPostId: string;
 }
 
 export async function RelatedPosts({ currentPostId }: RelatedPostsProps) {
-  const relatedPosts = await getRelatedPosts(currentPostId)
+  const { data: posts, error } = await serverDb.posts.getPublished();
+
+  if (error || !posts) {
+    return null;
+  }
+
+  // Filter out current post and get up to 3 related posts
+  const relatedPosts = posts
+    .filter((post) => post.id !== currentPostId)
+    .slice(0, 3);
 
   if (relatedPosts.length === 0) {
-    return null
+    return null;
   }
 
   return (
-    <section className="border-t border-gray-200 pt-12">
-      <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Posts</h2>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="border-t border-gray-200 pt-8">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Posts</h2>
+      <div className="grid gap-6 md:grid-cols-3">
         {relatedPosts.map((post) => (
-          <Card key={post.id}>
+          <Card key={post.id} className="h-full flex flex-col">
             <CardHeader>
-              <div className="text-sm text-gray-500 mb-2">{formatDate(post.published_at!)}</div>
-              <CardTitle className="text-lg">
-                <Link href={`/blog/${post.slug}`} className="hover:text-blue-600 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-500">
+                  {formatDate(post.published_at!)}
+                </span>
+              </div>
+              <CardTitle className="line-clamp-2">
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="hover:text-blue-600 transition-colors"
+                >
                   {post.title}
                 </Link>
               </CardTitle>
-              {post.excerpt && <CardDescription className="line-clamp-2">{post.excerpt}</CardDescription>}
+              {post.excerpt && (
+                <CardDescription className="line-clamp-3">
+                  {post.excerpt}
+                </CardDescription>
+              )}
             </CardHeader>
-            <CardContent>
-              <Link href={`/blog/${post.slug}`} className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+            <CardContent className="flex-1 flex items-end">
+              <Link
+                href={`/blog/${post.slug}`}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
                 Read more →
               </Link>
             </CardContent>
           </Card>
         ))}
       </div>
-    </section>
-  )
+    </div>
+  );
 }

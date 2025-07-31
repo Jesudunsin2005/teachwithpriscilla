@@ -1,52 +1,43 @@
-import { notFound } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, Calendar, Share2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
-import type { BlogPost } from "@/lib/types"
-import { formatDate } from "@/lib/utils"
-import { ShareButtons } from "@/components/share-buttons"
-import { RelatedPosts } from "@/components/related-posts"
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Calendar, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { BlogPost } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
+import { ShareButtons } from "@/components/share-buttons";
+import { RelatedPosts } from "@/components/related-posts";
+import { serverDb } from "@/utils/supabase/database";
 
-async function getBlogPost(slug: string): Promise<BlogPost | null> {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("slug", slug)
-    .not("published_at", "is", null)
-    .lte("published_at", new Date().toISOString())
-    .single()
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const { data: post, error } = await serverDb.posts.getBySlug(slug);
 
-  if (error) {
-    console.error("Error fetching blog post:", error)
-    return null
-  }
-
-  return data
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const post = await getBlogPost(slug)
-
-  if (!post) {
+  if (error || !post) {
     return {
       title: "Post Not Found - Teach with Priscilla",
-    }
+    };
   }
 
   return {
     title: `${post.title} - Teach with Priscilla`,
     description: post.excerpt || post.content.substring(0, 160),
-  }
+  };
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const post = await getBlogPost(slug)
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const { data: post, error } = await serverDb.posts.getBySlug(slug);
 
-  if (!post) {
-    notFound()
+  if (error || !post) {
+    notFound();
   }
 
   return (
@@ -63,23 +54,35 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
       {/* Article Header */}
       <header className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-4">{post.title}</h1>
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-4">
+          {post.title}
+        </h1>
 
         <div className="flex items-center gap-4 text-gray-600 mb-6">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <time dateTime={post.published_at!}>{formatDate(post.published_at!)}</time>
+            <time dateTime={post.published_at!}>
+              {formatDate(post.published_at!)}
+            </time>
           </div>
           <span>•</span>
           <span>By Priscilla</span>
         </div>
 
-        {post.excerpt && <p className="text-xl text-gray-600 leading-relaxed">{post.excerpt}</p>}
+        {post.excerpt && (
+          <p className="text-xl text-gray-600 leading-relaxed">
+            {post.excerpt}
+          </p>
+        )}
       </header>
 
       {/* Article Content */}
       <div className="prose prose-lg max-w-none mb-12">
-        <div dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br />") }} />
+        <div
+          dangerouslySetInnerHTML={{
+            __html: post.content.replace(/\n/g, "<br />"),
+          }}
+        />
       </div>
 
       {/* Share Buttons */}
@@ -94,5 +97,5 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Related Posts */}
       <RelatedPosts currentPostId={post.id} />
     </article>
-  )
+  );
 }

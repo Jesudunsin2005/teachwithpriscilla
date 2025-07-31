@@ -56,11 +56,11 @@ export function Navigation() {
               </Link>
             </Button>
             {/* Development helper link */}
-            {process.env.NODE_ENV === "development" && (
+            {/* {process.env.NODE_ENV === "development" && (
               <Button variant="outline" size="sm" asChild>
                 <Link href="/test-connection">Test DB</Link>
               </Button>
-            )}
+            )} */}
           </div>
 
           {/* Mobile menu button */}
